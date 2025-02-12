@@ -5,6 +5,7 @@ import { createPeerScoreParams } from '@chainsafe/libp2p-gossipsub/score'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
+import { dcutr } from '@libp2p/dcutr'
 import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
 import {
@@ -20,7 +21,6 @@ import { raceEvent } from 'race-event'
 import { isBrowser, isWebWorker } from 'wherearewe'
 import { createBaseOptions } from './fixtures/base-options.js'
 import type { IdentifyResult, Libp2p } from '@libp2p/interface'
-import { dcutr } from '@libp2p/dcutr'
 
 describe('websocket many peers', () => {
   if (isBrowser || isWebWorker) {
@@ -108,7 +108,13 @@ describe('websocket many peers', () => {
     for (let i = 1; i < nodes.length; i++) {
       await Promise.all([
         nodes[i].start(),
-        nodes[i].dial(baseMAs)
+        (async () => {
+          try {
+            await nodes[i].dial(baseMAs)
+          } catch (err) {
+            console.error('error dialing', err)
+          }
+        })()
       ])
       const pubsub = nodes[i].services.pubsub as GossipSub
       pubsub.subscribe('test')
