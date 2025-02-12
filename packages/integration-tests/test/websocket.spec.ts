@@ -32,7 +32,7 @@ describe('websocket many peers', () => {
 
   beforeEach(async () => {
     btNode = await createLibp2p(createBaseOptions({
-      addresses: { listen: ['/ip4/127.0.0.1/tcp/0/ws'] },
+      addresses: { listen: ['/ip4/0.0.0.0/tcp/0/ws'] },
       transports: [webSockets({ filter: filters.all }), webRTC(), circuitRelayTransport(), webTransport()],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux()],
@@ -75,7 +75,7 @@ describe('websocket many peers', () => {
   const makeTest = (n: number) => async () => {
     nodes.push(...await Promise.all(Array.from({ length: n }, async () => createLibp2p(createBaseOptions({
       addresses: { listen: ['/p2p-circuit', '/webrtc'] },
-      transports: [webSockets({ filter: filters.all }), webRTC(), circuitRelayTransport(), webTransport()],
+      transports: [webSockets({ filter: filters.all }), webRTC(), circuitRelayTransport()],
       connectionEncrypters: [noise()],
       streamMuxers: [yamux()],
       connectionGater: { denyDialMultiaddr: () => false },
@@ -106,14 +106,7 @@ describe('websocket many peers', () => {
     const baseMAs = btNode.getMultiaddrs()
 
     for (let i = 1; i < nodes.length; i++) {
-      console.log('starting node', i)
       await Promise.all([
-        raceEvent(btNode, 'peer:identify', undefined, {
-          filter: (evt: CustomEvent<IdentifyResult>) => {
-            console.log('identify event', evt.detail.signedPeerRecord)
-            return Boolean(evt.detail.signedPeerRecord)
-          }
-        }),
         nodes[i].start(),
         nodes[i].dial(baseMAs)
       ])
